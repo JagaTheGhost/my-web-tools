@@ -1,0 +1,275 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DocuPrisma | WebTools</title>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;500;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --glass-bg: rgba(255, 255, 255, 0.95);
+            --accent: #f43f5e;
+            --bg: #0f172a;
+            --text-main: #1e293b;
+        }
+
+        body {
+            font-family: 'Outfit', sans-serif;
+            background: var(--bg);
+            background-image: 
+                radial-gradient(at 0% 0%, hsla(253,16%,7%,1) 0, transparent 50%), 
+                radial-gradient(at 50% 0%, hsla(225,39%,30%,1) 0, transparent 50%), 
+                radial-gradient(at 100% 0%, hsla(339,49%,30%,1) 0, transparent 50%);
+            height: 100vh;
+            width: 100vw;
+            overflow: hidden;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0;
+            color: var(--text-main);
+            flex-direction: column;
+        }
+
+        .back-link {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            color: white;
+            text-decoration: none;
+            font-weight: 500;
+            opacity: 0.7;
+        }
+        .back-link:hover { opacity: 1; }
+
+        .blob {
+            position: absolute;
+            width: 500px;
+            height: 500px;
+            background: linear-gradient(180deg, #f43f5e 0%, #a855f7 100%);
+            border-radius: 50%;
+            filter: blur(80px);
+            opacity: 0.3;
+            z-index: -1;
+            animation: float 10s infinite alternate;
+        }
+        .blob:nth-child(1) { top: -10%; left: -10%; }
+        .blob:nth-child(2) { bottom: -10%; right: -10%; animation-delay: -5s; }
+
+        @keyframes float {
+            0% { transform: translate(0, 0) scale(1); }
+            100% { transform: translate(20px, 40px) scale(1.1); }
+        }
+
+        .card {
+            background: var(--glass-bg);
+            backdrop-filter: blur(20px);
+            border-radius: 24px;
+            padding: 40px;
+            width: 90%;
+            max-width: 500px;
+            box-shadow: 0 25px 50px -12px rgba(0,0,0,0.5);
+            text-align: center;
+            position: relative;
+        }
+
+        h1 { margin: 0 0 10px 0; font-size: 28px; background: linear-gradient(to right, #f43f5e, #a855f7); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+        p { color: #64748b; margin-bottom: 30px; }
+
+        .tabs {
+            display: flex;
+            background: #e2e8f0;
+            padding: 5px;
+            border-radius: 12px;
+            margin-bottom: 25px;
+        }
+        .tab {
+            flex: 1;
+            padding: 10px;
+            cursor: pointer;
+            border-radius: 8px;
+            font-weight: 500;
+            font-size: 14px;
+            transition: all 0.2s;
+            color: #64748b;
+        }
+        .tab.active {
+            background: white;
+            color: var(--accent);
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+
+        .drop-zone {
+            border: 2px dashed #cbd5e1;
+            border-radius: 16px;
+            padding: 40px 20px;
+            cursor: pointer;
+            transition: 0.3s;
+            background: #f8fafc;
+            position: relative;
+        }
+        .drop-zone:hover { border-color: var(--accent); background: #fff1f2; }
+        
+        .icon { font-size: 40px; display: block; margin-bottom: 10px; }
+        .drop-text { font-weight: 600; color: #334155; }
+        
+        #actionBtn {
+            display: none;
+            width: 100%;
+            margin-top: 20px;
+            background: linear-gradient(135deg, #f43f5e, #a855f7);
+            color: white;
+            border: none;
+            padding: 16px;
+            border-radius: 12px;
+            font-size: 16px;
+            font-weight: 700;
+            cursor: pointer;
+            transition: transform 0.1s;
+        }
+        #actionBtn:active { transform: scale(0.98); }
+        #actionBtn:disabled { opacity: 0.7; cursor: not-allowed; }
+
+        #status { margin-top: 15px; font-size: 14px; font-weight: 500; min-height: 20px; }
+        .success { color: #10b981; }
+        .error { color: #ef4444; }
+
+    </style>
+</head>
+<body>
+
+    <a href="/" class="back-link">← Back to Portal</a>
+
+    <div class="blob"></div>
+    <div class="blob"></div>
+
+    <div class="card">
+        <h1>DocuPrisma</h1>
+        <p>Convert documents securely</p>
+
+        <div class="tabs">
+            <div class="tab active" onclick="setMode('pdf2word', this)">PDF to Word</div>
+            <div class="tab" onclick="setMode('word2pdf', this)">Word to PDF</div>
+            <div class="tab" onclick="setMode('ppt2pdf', this)">PPTX to PDF</div>
+        </div>
+
+        <div class="drop-zone" id="dropZone" onclick="document.getElementById('fileInput').click()">
+            <span class="icon">📄</span>
+            <span id="dropText">Upload PDF File</span>
+            <input type="file" id="fileInput" accept=".pdf" style="display: none;">
+        </div>
+
+        <button id="actionBtn" onclick="processFile()">Convert Now</button>
+        <div id="status"></div>
+    </div>
+
+<script>
+    let currentMode = 'pdf2word';
+    let selectedFile = null;
+    
+    const dropText = document.getElementById('dropText');
+    const fileInput = document.getElementById('fileInput');
+    const actionBtn = document.getElementById('actionBtn');
+    const statusDiv = document.getElementById('status');
+    const icon = document.querySelector('.icon');
+
+    function setMode(mode, tabElement) {
+        currentMode = mode;
+        selectedFile = null;
+        fileInput.value = '';
+        
+        document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+        tabElement.classList.add('active');
+        actionBtn.style.display = 'none';
+        actionBtn.innerText = "Convert Now";
+        actionBtn.onclick = processFile;
+        statusDiv.innerText = '';
+        
+        if(mode === 'pdf2word') {
+            icon.innerText = '📄';
+            dropText.innerText = "Upload PDF";
+            fileInput.accept = ".pdf";
+        } else if(mode === 'word2pdf') {
+            icon.innerText = '📝';
+            dropText.innerText = "Upload Word (DOCX)";
+            fileInput.accept = ".docx";
+        } else if(mode === 'ppt2pdf') {
+            icon.innerText = '📊';
+            dropText.innerText = "Upload PowerPoint (PPTX)";
+            fileInput.accept = ".pptx";
+        }
+    }
+
+    fileInput.addEventListener('change', (e) => {
+        if(e.target.files.length > 0) {
+            selectedFile = e.target.files[0];
+            dropText.innerText = selectedFile.name;
+            actionBtn.style.display = 'block';
+            statusDiv.innerText = '';
+        }
+    });
+
+    async function processFile() {
+        if(!selectedFile) return;
+
+        actionBtn.disabled = true;
+        actionBtn.innerText = "Converting... (This may take a moment)";
+        statusDiv.innerText = "Processing on server...";
+        statusDiv.className = "";
+
+        const formData = new FormData();
+        formData.append('file', selectedFile);
+        formData.append('type', currentMode);
+
+        try {
+            // FIXED: Fetching from the new API route
+            const response = await fetch('/api/convert', {
+                method: 'POST',
+                body: formData
+            });
+
+            if (!response.ok) {
+                const errorText = await response.text();
+                throw new Error(errorText);
+            }
+
+            const contentDisp = response.headers.get('Content-Disposition');
+            let filename = 'converted-document';
+            if (contentDisp && contentDisp.indexOf('filename=') !== -1) {
+                filename = contentDisp.split('filename=')[1].replace(/"/g, '');
+            } else {
+                if(currentMode === 'pdf2word') filename += '.docx';
+                else filename += '.pdf';
+            }
+
+            const blob = await response.blob();
+            const url = window.URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = filename;
+            document.body.appendChild(a);
+            a.click();
+            window.URL.revokeObjectURL(url);
+            a.remove();
+
+            statusDiv.innerText = "Success! File downloaded.";
+            statusDiv.className = "success";
+            
+            actionBtn.disabled = false;
+            actionBtn.innerText = "Convert Another File";
+            actionBtn.onclick = () => {
+                location.reload(); 
+            };
+
+        } catch (error) {
+            console.error(error);
+            statusDiv.innerText = "Error: " + error.message;
+            statusDiv.className = "error";
+            actionBtn.disabled = false;
+            actionBtn.innerText = "Try Again";
+        }
+    }
+</script>
+
+</body>
+</html>

@@ -1,0 +1,185 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>OmniCompress | WebTools</title>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;500;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --accent: #10b981;
+            --bg: #0f172a;
+            --glass: rgba(255, 255, 255, 0.95);
+        }
+        body {
+            font-family: 'Outfit', sans-serif;
+            background: var(--bg);
+            background-image: 
+                linear-gradient(rgba(255,255,255,0.03) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(255,255,255,0.03) 1px, transparent 1px);
+            background-size: 30px 30px;
+            height: 100vh;
+            width: 100vw;
+            overflow: hidden;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #1e293b;
+            margin: 0;
+            flex-direction: column;
+        }
+        /* Added a Back Button Style */
+        .back-link {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            color: white;
+            text-decoration: none;
+            font-weight: 500;
+            opacity: 0.7;
+        }
+        .back-link:hover { opacity: 1; }
+
+        .card {
+            background: var(--glass);
+            padding: 40px;
+            border-radius: 24px;
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+            width: 90%;
+            max-width: 450px;
+            text-align: center;
+        }
+        h1 { margin: 0; color: #064e3b; }
+        p { color: #64748b; margin-bottom: 25px; }
+        .tabs {
+            display: flex;
+            background: #e2e8f0;
+            padding: 4px;
+            border-radius: 12px;
+            margin-bottom: 25px;
+        }
+        .tab {
+            flex: 1;
+            padding: 10px;
+            cursor: pointer;
+            border-radius: 8px;
+            font-weight: 500;
+            font-size: 14px;
+            transition: all 0.2s;
+            color: #64748b;
+        }
+        .tab.active {
+            background: white;
+            color: var(--accent);
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .drop-zone {
+            border: 2px dashed #cbd5e1;
+            border-radius: 16px;
+            padding: 40px 20px;
+            cursor: pointer;
+            transition: all 0.3s;
+            background: #f8fafc;
+            position: relative;
+        }
+        .drop-zone:hover {
+            border-color: var(--accent);
+            background: #ecfdf5;
+        }
+        .icon { font-size: 40px; display: block; margin-bottom: 10px; }
+        #compressBtn {
+            display: none;
+            width: 100%;
+            margin-top: 20px;
+            background: var(--accent);
+            color: white;
+            border: none;
+            padding: 15px;
+            border-radius: 12px;
+            font-size: 16px;
+            font-weight: 700;
+            cursor: pointer;
+        }
+        #status { margin-top: 15px; font-size: 14px; font-weight: 500; color: #059669; min-height: 20px;}
+    </style>
+</head>
+<body>
+
+<a href="/" class="back-link">← Back to Portal</a>
+
+<div class="card">
+    <h1>OmniCompress</h1>
+    <p>Reduce file size securely</p>
+
+    <div class="tabs">
+        <div class="tab active" onclick="setMode('image', this)">Image</div>
+        <div class="tab" onclick="setMode('pdf', this)">PDF</div>
+        <div class="tab" onclick="setMode('doc', this)">DOCX</div>
+    </div>
+
+    <form id="uploadForm" action="/compress-tool" method="post" enctype="multipart/form-data">
+        <input type="hidden" name="type" id="fileType" value="image">
+        
+        <div class="drop-zone" onclick="document.getElementById('fileInput').click()">
+            <span class="icon">🖼️</span>
+            <span id="dropText">Upload JPG/PNG</span>
+            <input type="file" name="file" id="fileInput" 
+                   accept="image/*"
+                   style="display:none;">
+        </div>
+
+        <button type="submit" id="compressBtn">Compress Now</button>
+    </form>
+    
+    <div id="status"></div>
+</div>
+
+<script>
+    const fileInput = document.getElementById('fileInput');
+    const compressBtn = document.getElementById('compressBtn');
+    const dropText = document.getElementById('dropText');
+    const icon = document.querySelector('.icon');
+    const fileTypeInput = document.getElementById('fileType');
+    const statusDiv = document.getElementById('status');
+
+    function setMode(mode, element) {
+        fileTypeInput.value = mode;
+        document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+        element.classList.add('active');
+        fileInput.value = ''; 
+        compressBtn.style.display = 'none';
+        statusDiv.innerText = '';
+
+        if(mode === 'image') { 
+            icon.innerText = '🖼️'; 
+            dropText.innerText = 'Upload JPG/PNG'; 
+            fileInput.accept = 'image/*'; 
+        }
+        if(mode === 'pdf') { 
+            icon.innerText = '📄'; 
+            dropText.innerText = 'Upload PDF'; 
+            fileInput.accept = '.pdf'; 
+        }
+        if(mode === 'doc') { 
+            icon.innerText = '📝'; 
+            dropText.innerText = 'Upload Word Doc'; 
+            fileInput.accept = '.docx'; 
+        }
+    }
+
+    fileInput.addEventListener('change', (e) => {
+        if (e.target.files.length > 0) {
+            dropText.innerText = e.target.files[0].name;
+            compressBtn.style.display = "block";
+        }
+    });
+
+    document.getElementById('uploadForm').onsubmit = function() {
+        statusDiv.innerText = "Compressing... Please wait.";
+        compressBtn.style.opacity = "0.7";
+        compressBtn.innerText = "Processing...";
+    };
+</script>
+
+</body>
+</html>

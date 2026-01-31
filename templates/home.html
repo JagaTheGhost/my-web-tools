@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>WebTools Portal</title>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;500;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Outfit', sans-serif;
+            background: #0f172a;
+            color: white;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+            margin: 0;
+        }
+        h1 { margin-bottom: 40px; font-size: 3rem; background: linear-gradient(to right, #f43f5e, #6366f1); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+        .grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; width: 90%; max-width: 1000px; }
+        .card {
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            padding: 30px;
+            border-radius: 20px;
+            text-align: center;
+            transition: 0.3s;
+            text-decoration: none;
+            color: white;
+            cursor: pointer;
+        }
+        .card:hover { transform: translateY(-10px); background: rgba(255, 255, 255, 0.1); border-color: #6366f1; }
+        .icon { font-size: 50px; display: block; margin-bottom: 15px; }
+        h2 { margin: 0; font-size: 1.5rem; }
+        p { color: #94a3b8; font-size: 0.9rem; }
+    </style>
+</head>
+<body>
+    <h1>My Web Tools</h1>
+    <div class="grid">
+        <a href="/image-tool" class="card">
+            <span class="icon">🖼️</span>
+            <h2>Image Converter</h2>
+            <p>Convert PNG to JPG, WEBP, and more instantly.</p>
+        </a>
+        <a href="/compress-tool" class="card">
+            <span class="icon">📉</span>
+            <h2>File Compressor</h2>
+            <p>Reduce the size of Images, PDFs, and Word Docs.</p>
+        </a>
+        <a href="/convert-tool" class="card">
+            <span class="icon">🔄</span>
+            <h2>Doc Converter</h2>
+            <p>Switch between PDF, Word, and PowerPoint.</p>
+        </a>
+    </div>
+</body>
+</html>

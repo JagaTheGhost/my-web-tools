@@ -1,0 +1,308 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Prisma Convert | Modern Image Tool</title>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;500;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --glass-bg: rgba(255, 255, 255, 0.95);
+            --glass-border: rgba(255, 255, 255, 0.5);
+            --accent-gradient: linear-gradient(135deg, #6366f1 0%, #a855f7 100%);
+            --accent-shadow: 0 20px 40px -10px rgba(99, 102, 241, 0.5);
+            --text-main: #1e293b;
+            --text-muted: #64748b;
+        }
+
+        body {
+            font-family: 'Outfit', sans-serif;
+            background: #0f172a;
+            background-image: 
+                radial-gradient(at 0% 0%, hsla(253,16%,7%,1) 0, transparent 50%), 
+                radial-gradient(at 50% 0%, hsla(225,39%,30%,1) 0, transparent 50%), 
+                radial-gradient(at 100% 0%, hsla(339,49%,30%,1) 0, transparent 50%);
+            color: var(--text-main);
+            /* KEY CHANGE: Flexbox centers everything and locks the height */
+            height: 100vh;
+            width: 100vw;
+            overflow: hidden; /* Disables scrolling */
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0;
+            padding: 0;
+        }
+
+        /* Background Blobs */
+        .blob {
+            position: absolute;
+            width: 500px;
+            height: 500px;
+            background: linear-gradient(180deg, #6366f1 0%, #a855f7 100%);
+            border-radius: 50%;
+            filter: blur(80px);
+            opacity: 0.4;
+            z-index: -1;
+            animation: float 10s infinite alternate;
+        }
+        .blob:nth-child(1) { top: -10%; left: -10%; }
+        .blob:nth-child(2) { bottom: -10%; right: -10%; animation-delay: -5s; }
+
+        @keyframes float {
+            0% { transform: translate(0, 0) scale(1); }
+            100% { transform: translate(20px, 40px) scale(1.1); }
+        }
+
+        .card {
+            background: var(--glass-bg);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border: 1px solid var(--glass-border);
+            padding: 30px; /* Reduced padding slightly to save space */
+            border-radius: 24px;
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+            width: 90%;
+            max-width: 440px;
+            text-align: center;
+            
+            /* Ensure card fits in view on small screens */
+            max-height: 90vh; 
+            display: flex;
+            flex-direction: column;
+        }
+
+        h1 {
+            font-size: 24px; /* Slightly smaller for compactness */
+            margin: 0 0 5px 0;
+            background: var(--accent-gradient);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            font-weight: 700;
+        }
+
+        p.subtitle {
+            color: var(--text-muted);
+            font-size: 14px;
+            margin-bottom: 20px;
+        }
+
+        .control-group { margin-bottom: 20px; }
+        
+        select {
+            appearance: none;
+            background-color: #f1f5f9;
+            border: 2px solid transparent;
+            padding: 12px 15px;
+            border-radius: 12px;
+            width: 100%;
+            font-family: inherit;
+            font-size: 15px;
+            font-weight: 500;
+            color: var(--text-main);
+            cursor: pointer;
+            transition: all 0.2s;
+            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24' fill='none' stroke='%236366f1' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E");
+            background-repeat: no-repeat;
+            background-position: right 15px center;
+            background-size: 18px;
+        }
+        select:focus { outline: none; border-color: #6366f1; background-color: white; }
+
+        .drop-zone {
+            border: 2px dashed #cbd5e1;
+            border-radius: 16px;
+            padding: 30px 20px;
+            cursor: pointer;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            position: relative;
+            background: white;
+            flex-grow: 1; /* Allows it to take available space */
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .drop-zone:hover {
+            border-color: #6366f1;
+            transform: translateY(-2px);
+            box-shadow: 0 10px 25px -5px rgba(99, 102, 241, 0.15);
+        }
+
+        .drop-zone.dragover { border-color: #6366f1; background: #eef2ff; }
+
+        .icon-upload { font-size: 32px; margin-bottom: 8px; display: block; }
+        .drop-text { font-weight: 500; color: var(--text-main); font-size: 15px; }
+        .drop-sub { font-size: 12px; color: var(--text-muted); margin-top: 4px; display: block; }
+
+        #fileInput { position: absolute; top: 0; left: 0; width: 100%; height: 100%; opacity: 0; cursor: pointer; }
+
+        /* Preview Container - Handles inner scrolling if image is massive */
+        #previewContainer {
+            margin-top: 20px;
+            display: none;
+            animation: fadeIn 0.4s ease;
+            flex-direction: column;
+            align-items: center;
+            overflow-y: auto; /* Internal scroll ONLY if needed */
+            max-height: 40vh; /* Keeps buttons visible */
+            scrollbar-width: thin; /* Firefox */
+        }
+
+        #preview {
+            max-width: 100%;
+            height: auto; /* Maintain aspect ratio */
+            max-height: 200px; /* Limit height */
+            object-fit: contain;
+            border-radius: 8px;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+            background-image: radial-gradient(#cbd5e1 1px, transparent 1px);
+            background-size: 10px 10px;
+            background-color: #f8fafc;
+        }
+
+        #downloadBtn {
+            display: none;
+            margin-top: 15px;
+            background: var(--accent-gradient);
+            color: white;
+            padding: 14px 28px;
+            text-decoration: none;
+            border-radius: 50px;
+            font-weight: 600;
+            font-size: 15px;
+            box-shadow: var(--accent-shadow);
+            transition: all 0.3s ease;
+            width: 100%;
+            box-sizing: border-box;
+            text-align: center;
+        }
+
+        #downloadBtn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 25px 50px -12px rgba(99, 102, 241, 0.6);
+        }
+
+        #fileInfo { font-size: 13px; color: var(--text-muted); margin-top: 10px; font-weight: 500; }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="blob"></div>
+    <div class="blob"></div>
+
+    <div class="card">
+        <h1>Prisma Convert</h1>
+        <p class="subtitle">Secure in-browser converter</p>
+        
+        <div class="control-group">
+            <select id="formatSelect" onchange="reprocess()">
+                <option value="image/jpeg" selected>JPG (Photos)</option>
+                <option value="image/png">PNG (Transparent)</option>
+                <option value="image/webp">WEBP (Web)</option>
+            </select>
+        </div>
+
+        <div class="drop-zone" id="dropZone">
+            <span class="icon-upload">☁️</span>
+            <span class="drop-text">Drag Image Here</span>
+            <span class="drop-sub">PNG, JPG, WEBP, GIF</span>
+            <input type="file" id="fileInput" accept="image/*">
+        </div>
+
+        <div id="fileInfo"></div>
+
+        <div id="previewContainer">
+            <img id="preview" alt="Preview">
+            <a id="downloadBtn" download>Download Image</a>
+        </div>
+    </div>
+
+<script>
+    const fileInput = document.getElementById('fileInput');
+    const dropZone = document.getElementById('dropZone');
+    const downloadBtn = document.getElementById('downloadBtn');
+    const preview = document.getElementById('preview');
+    const previewContainer = document.getElementById('previewContainer');
+    const formatSelect = document.getElementById('formatSelect');
+    const fileInfo = document.getElementById('fileInfo');
+    const dropZoneContainer = document.getElementById('dropZone');
+
+    let currentFile = null;
+
+    ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
+        dropZone.addEventListener(eventName, (e) => { e.preventDefault(); e.stopPropagation(); }, false);
+    });
+
+    ['dragenter', 'dragover'].forEach(eventName => {
+        dropZone.addEventListener(eventName, () => dropZone.classList.add('dragover'), false);
+    });
+
+    ['dragleave', 'drop'].forEach(eventName => {
+        dropZone.addEventListener(eventName, () => dropZone.classList.remove('dragover'), false);
+    });
+
+    dropZone.addEventListener('drop', (e) => handleFile(e.dataTransfer.files[0]), false);
+    fileInput.addEventListener('change', (e) => handleFile(e.target.files[0]), false);
+
+    function reprocess() { if (currentFile) processImage(currentFile); }
+
+    function handleFile(file) {
+        if (file && file.type.startsWith('image/')) {
+            currentFile = file;
+            fileInfo.innerText = `${file.name}`;
+            
+            // UI Tweak: Make dropzone smaller when file is loaded to make room for preview
+            dropZoneContainer.style.padding = "10px";
+            dropZoneContainer.querySelector('.icon-upload').style.display = 'none';
+            dropZoneContainer.querySelector('.drop-sub').style.display = 'none';
+            
+            processImage(file);
+        } else {
+            alert("Please upload a valid image file.");
+        }
+    }
+
+    function processImage(file) {
+        const reader = new FileReader();
+        reader.readAsDataURL(file);
+        reader.onload = function(event) {
+            const img = new Image();
+            img.src = event.target.result;
+            img.onload = function() {
+                const canvas = document.createElement('canvas');
+                canvas.width = img.width;
+                canvas.height = img.height;
+                const ctx = canvas.getContext('2d');
+                
+                const format = formatSelect.value;
+                if (format === 'image/jpeg') {
+                    ctx.fillStyle = "#FFFFFF";
+                    ctx.fillRect(0, 0, canvas.width, canvas.height);
+                } else {
+                    ctx.clearRect(0, 0, canvas.width, canvas.height);
+                }
+                ctx.drawImage(img, 0, 0);
+                const dataUrl = canvas.toDataURL(format, 0.95);
+                
+                preview.src = dataUrl;
+                previewContainer.style.display = "flex"; // Changed to Flex to center button
+                
+                const extension = format.split('/')[1]; 
+                const originalName = file.name.split('.')[0];
+                downloadBtn.href = dataUrl;
+                downloadBtn.download = `${originalName}-prisma.${extension}`;
+                downloadBtn.style.display = "block";
+                downloadBtn.innerText = `Download .${extension.toUpperCase()}`;
+            }
+        }
+    }
+</script>
+</body>
+</html>
