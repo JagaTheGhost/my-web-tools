@@ -56,6 +56,15 @@ def compress_docx_logic(file_stream):
     output.seek(0)
     return output, "compressed.docx"
 
+def merge_pdfs_logic(file_list):
+    merger = PdfWriter()
+    for file in file_list:
+        merger.append(file)
+    output = BytesIO()
+    merger.write(output)
+    output.seek(0)
+    return output, "merged_document.pdf"
+
 # --- ROUTES ---
 
 @app.route('/')
@@ -66,35 +75,38 @@ def home():
 def image_tool():
     return render_template('image.html')
 
-# --- COMPRESSOR TOOL ROUTES ---
 @app.route('/compress-tool', methods=['GET', 'POST'])
 def compress_tool():
     if request.method == 'POST':
         file = request.files.get('file')
         file_type = request.form.get('type')
-        
         if not file: return "No file", 400
-
         try:
-            if file_type == 'image':
-                out, name = compress_image_logic(file.stream)
-            elif file_type == 'pdf':
-                out, name = compress_pdf_logic(file.stream)
-            elif file_type == 'doc':
-                out, name = compress_docx_logic(file.stream)
-            else:
-                return "Invalid Type", 400
-            
+            if file_type == 'image': out, name = compress_image_logic(file.stream)
+            elif file_type == 'pdf': out, name = compress_pdf_logic(file.stream)
+            elif file_type == 'doc': out, name = compress_docx_logic(file.stream)
+            else: return "Invalid Type", 400
             return send_file(out, as_attachment=True, download_name=name)
-        except Exception as e:
-            return f"Error: {e}", 500
-
+        except Exception as e: return f"Error: {e}", 500
     return render_template('compress.html')
 
-# --- CONVERTER TOOL ROUTES ---
 @app.route('/convert-tool')
 def convert_tool():
     return render_template('convert.html')
+
+# --- NEW MERGE TOOL ROUTE ---
+@app.route('/merge-tool', methods=['GET', 'POST'])
+def merge_tool():
+    if request.method == 'POST':
+        files = request.files.getlist('files')
+        if not files or files[0].filename == '':
+            return "No files selected", 400
+        try:
+            out, name = merge_pdfs_logic(files)
+            return send_file(out, as_attachment=True, download_name=name)
+        except Exception as e:
+            return f"Error: {e}", 500
+    return render_template('merge.html')
 
 @app.route('/api/convert', methods=['POST'])
 def api_convert():
@@ -104,7 +116,6 @@ def api_convert():
         filename = secure_filename(file.filename)
         input_path = os.path.join(app.config['UPLOAD_FOLDER'], filename)
         file.save(input_path)
-        
         name_no_ext = os.path.splitext(filename)[0]
 
         if conversion_type == 'pdf2word':
@@ -113,13 +124,11 @@ def api_convert():
             cv = Converter(input_path)
             cv.convert(out_path, start=0, end=None)
             cv.close()
-
         elif conversion_type == 'word2pdf':
             out_name = f"{name_no_ext}.pdf"
             out_path = os.path.join(app.config['OUTPUT_FOLDER'], out_name)
             pythoncom.CoInitialize()
             convert(input_path, out_path)
-
         elif conversion_type == 'ppt2pdf':
             out_name = f"{name_no_ext}.pdf"
             out_path = os.path.join(app.config['OUTPUT_FOLDER'], out_name)
@@ -132,7 +141,6 @@ def api_convert():
             ppt.Quit()
         
         return send_file(out_path, as_attachment=True, download_name=out_name)
-    
     except Exception as e:
         print(e)
         return str(e), 500

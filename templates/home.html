@@ -14,11 +14,11 @@
             flex-direction: column;
             align-items: center;
             justify-content: center;
-            height: 100vh;
+            min-height: 100vh;
             margin: 0;
         }
         h1 { margin-bottom: 40px; font-size: 3rem; background: linear-gradient(to right, #f43f5e, #6366f1); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
-        .grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; width: 90%; max-width: 1000px; }
+        .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 20px; width: 90%; max-width: 1000px; }
         .card {
             background: rgba(255, 255, 255, 0.05);
             border: 1px solid rgba(255, 255, 255, 0.1);
@@ -53,6 +53,11 @@
             <span class="icon">🔄</span>
             <h2>Doc Converter</h2>
             <p>Switch between PDF, Word, and PowerPoint.</p>
+        </a>
+        <a href="/merge-tool" class="card" style="border-color: #f59e0b;">
+            <span class="icon">📑</span>
+            <h2>PDF Merger</h2>
+            <p>Combine multiple PDF files into one.</p>
         </a>
     </div>
 </body>
